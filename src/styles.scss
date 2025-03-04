@@ -1,0 +1,5 @@
+@use "themes/tailwind";
+
+.button {
+    @apply px-4 py-2 border rounded-sm text-white;
+}

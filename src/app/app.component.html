@@ -1,0 +1,106 @@
+<h1 class="text-3xl font-bold underline">McDonald Order Controller</h1>
+
+<!-- Customer -->
+<section>
+    <div class="my-2">Customer Actions</div>
+    <div class="flex gap-x-3">
+        <button
+            type="button"
+            class="button bg-blue-400 border-blue-500"
+            (click)="onNewOrderClick(CustomerMembership.Normal)"
+        >
+            New Normal Order
+        </button>
+        <button
+            type="button"
+            class="button bg-amber-300 border-amber-400"
+            (click)="onNewOrderClick(CustomerMembership.VIP)"
+        >
+            New VIP Order
+        </button>
+    </div>
+</section>
+
+<!-- Mcdonald Manager -->
+<section>
+    <div class="mt-5 mb-2">Manager Actions</div>
+    <div class="flex gap-x-3">
+        <button
+            type="button"
+            class="button bg-blue-400 border-blue-500"
+            (click)="onAddBotClick()"
+        >
+            Add Bot
+        </button>
+        <button
+            type="button"
+            class="button bg-red-400 border-red-500"
+            (click)="onReduceBotClick()"
+        >
+            Reduce Bot
+        </button>
+    </div>
+</section>
+
+<!-- Order Status -->
+<section>
+    <div class="mt-20 mb-2">Order Status</div>
+    <div class="grid grid-cols-2 gap-x-3">
+        <div class="border border-gray-300 rounded-md p-4">
+            <div class="text-center font-bold mb-2">PENDING</div>
+            <div class="flex flex-wrap gap-2">
+                <span
+                    class="rounded-sm p-2 bg-amber-300 text-white text-center min-w-[2rem]"
+                    *ngFor="let vipOrder of pendingVIPOrders"
+                    >#{{ vipOrder.id | zeroPad }}</span
+                >
+                <span
+                    class="rounded-sm p-2 bg-blue-400 text-white text-center min-w-[2rem]"
+                    *ngFor="let normalOrder of pendingNormalOrders"
+                    >#{{ normalOrder.id | zeroPad }}</span
+                >
+                <span
+                    *ngIf="
+                        !pendingVIPOrders.length && !pendingNormalOrders.length
+                    "
+                    class="text-sm text-gray-500"
+                    >No Pending Orders</span
+                >
+            </div>
+        </div>
+        <div class="border border-gray-300 rounded-md p-4">
+            <div class="text-center font-bold mb-2">COMPLETE</div>
+            <div class="flex flex-wrap gap-2">
+                <span
+                    class="rounded-sm p-2 bg-green-500 text-white text-center min-w-[2rem]"
+                    *ngFor="let completeOrder of completeOrders"
+                    >#{{ completeOrder.id | zeroPad }}</span
+                >
+                <span
+                    *ngIf="!completeOrders.length"
+                    class="text-sm text-gray-500"
+                    >No Complete Orders</span
+                >
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Bots -->
+<section>
+    <div class="mt-20 mb-2">Bots</div>
+    <div class="grid grid-cols-2">
+        <div
+            class="border border-gray-300 rounded-md p-4 flex flex-wrap gap-x-2 min-h-[4rem]"
+        >
+            <span
+                class="rounded-sm p-2 bg-gray-300 text-white text-center min-w-[2rem] h-fit"
+                *ngFor="let bot of bots"
+                >{{ bot.order ? "#" + (bot.order.id | zeroPad) : "IDLE" }}</span
+            >
+            <span *ngIf="!bots.length" class="text-sm text-gray-500"
+                >No Bots Available</span
+            >
+        </div>
+    </div>
+</section>
