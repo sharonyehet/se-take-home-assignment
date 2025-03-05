@@ -15,9 +15,9 @@ import { IOrder } from '../models/order.model';
 })
 export class AppComponent {
     CustomerMembership = CustomerMembership;
+    private ORDER_PROCESSING_TIME_IN_MS = 10000;
 
     title = 'se-take-home-assignment';
-
     pendingVIPOrders: IOrder[] = [];
     pendingNormalOrders: IOrder[] = [];
     completeOrders: IOrder[] = [];
@@ -36,14 +36,14 @@ export class AppComponent {
                 this.pendingVIPOrders.push(order);
                 break;
         }
-        this.processOrder();
+        this.processOrder(); // Immediately process order if bots available
     }
 
     onAddBotClick(): void {
         this.bots.push({
             order: null,
         });
-        this.processOrder();
+        this.processOrder(); // Immediately process any pending order with new bot
     }
 
     onReduceBotClick(): void {
@@ -52,7 +52,7 @@ export class AppComponent {
         if (!newestBot?.order) return;
 
         const order = newestBot.order;
-        this.unprocessOrders.next(order);
+        this.unprocessOrders.next(order); // un-process the order and back to queue at 1st position
     }
 
     private constructNewOrder(membership: CustomerMembership): IOrder {
@@ -65,10 +65,12 @@ export class AppComponent {
     }
 
     private processOrder(): void {
+        // Return if no bot available, otherwise process pending order
         const botInIDLE = this.bots.find((bot) => !bot.order);
 
         if (!botInIDLE) return;
 
+        // Process vip order first, followed by normal order, return if no pending orders
         const pendingOrder =
             this.pendingVIPOrders.shift() ||
             this.pendingNormalOrders.shift() ||
@@ -78,11 +80,13 @@ export class AppComponent {
         pendingOrder.status = OrderStatus.Processing;
         botInIDLE.order = pendingOrder;
 
+        // 10s of processing time, complete order then process next pending order
         const timeout = setTimeout(() => {
             this.completeOrder(botInIDLE);
             this.processOrder();
-        }, 10000);
+        }, this.ORDER_PROCESSING_TIME_IN_MS);
 
+        // get notified when any bot is being removed, to un-process current order
         this.unprocessOrderSubscription(timeout, pendingOrder.id);
     }
 
@@ -98,7 +102,9 @@ export class AppComponent {
     private unprocessOrderSubscription(timeoutId: any, orderId: number): void {
         this.unprocessOrders
             .pipe(
+                // filter emitted values to handle only the affected order
                 filter((order) => order.id === orderId),
+                // unsubscribe after first emit as unprocess is done at this point
                 take(1)
             )
             .subscribe((order) => {
@@ -107,13 +113,13 @@ export class AppComponent {
                 switch (order.customerMembership) {
                     case CustomerMembership.Normal:
                         this.pendingNormalOrders.unshift(order);
-                        console.log(this.pendingNormalOrders);
                         break;
                     case CustomerMembership.VIP:
                         this.pendingVIPOrders.unshift(order);
                         break;
                 }
 
+                // cancel the processing of affected order & continue with any pending orders
                 clearTimeout(timeoutId);
                 this.processOrder();
             });
