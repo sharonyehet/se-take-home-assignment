@@ -61,6 +61,7 @@ export class AppComponent {
             id: this.latestOrderId,
             customerMembership: membership,
             status: OrderStatus.Pending,
+            remainingProcessingTime: this.ORDER_PROCESSING_TIME_IN_MS,
         };
     }
 
@@ -81,13 +82,24 @@ export class AppComponent {
         botInIDLE.order = pendingOrder;
 
         // 10s of processing time, complete order then process next pending order
-        const timeout = setTimeout(() => {
-            this.completeOrder(botInIDLE);
-            this.processOrder();
-        }, this.ORDER_PROCESSING_TIME_IN_MS);
+        var remainingTime = pendingOrder.remainingProcessingTime;
+        const COUNTDOWN_INTERVAL_IN_MS = 1000;
+
+        const countdown = setInterval(() => {
+            if (remainingTime === 0) {
+                debugger;
+                this.completeOrder(botInIDLE);
+                this.processOrder();
+                clearInterval(countdown);
+            } else {
+                debugger;
+                remainingTime -= COUNTDOWN_INTERVAL_IN_MS;
+                pendingOrder.remainingProcessingTime = remainingTime;
+            }
+        }, COUNTDOWN_INTERVAL_IN_MS);
 
         // get notified when any bot is being removed, to un-process current order
-        this.unprocessOrderSubscription(timeout, pendingOrder.id);
+        this.unprocessOrderSubscription(countdown, pendingOrder.id);
     }
 
     private completeOrder(bot: IBot): void {
@@ -109,6 +121,8 @@ export class AppComponent {
             )
             .subscribe((order) => {
                 order.status = OrderStatus.Pending;
+                order.remainingProcessingTime =
+                    this.ORDER_PROCESSING_TIME_IN_MS;
 
                 switch (order.customerMembership) {
                     case CustomerMembership.Normal:
@@ -120,7 +134,7 @@ export class AppComponent {
                 }
 
                 // cancel the processing of affected order & continue with any pending orders
-                clearTimeout(timeoutId);
+                clearInterval(timeoutId);
                 this.processOrder();
             });
     }

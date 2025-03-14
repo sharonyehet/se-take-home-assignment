@@ -5,4 +5,5 @@ export interface IOrder {
     id: number;
     customerMembership: CustomerMembership;
     status: OrderStatus;
+    remainingProcessingTime: number;
 }

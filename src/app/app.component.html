@@ -96,7 +96,13 @@
             <span
                 class="rounded-sm p-2 bg-gray-300 text-white text-center min-w-[2rem] h-fit"
                 *ngFor="let bot of bots"
-                >{{ bot.order ? "#" + (bot.order.id | zeroPad) : "IDLE" }}</span
+                ><div>
+                    {{ bot.order ? "#" + (bot.order.id | zeroPad) : "IDLE" }}
+                </div>
+                <div>
+                    Remaining Time:
+                    {{ bot.order?.remainingProcessingTime + "ms" || "N/A" }}
+                </div></span
             >
             <span *ngIf="!bots.length" class="text-sm text-gray-500"
                 >No Bots Available</span
