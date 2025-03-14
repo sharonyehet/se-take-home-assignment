@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
 import { filter, Subject, take } from 'rxjs';
 import { ZeroPadPipe } from '../helpers/zero-pad.pipe';
-import { IBot } from '../models/bot.model';
+import { BotType, IBot } from '../models/bot.model';
 import { CustomerMembership } from '../models/membership.enum';
 import { OrderStatus } from '../models/order.enum';
 import { IOrder } from '../models/order.model';
@@ -15,7 +15,9 @@ import { IOrder } from '../models/order.model';
 })
 export class AppComponent {
     CustomerMembership = CustomerMembership;
+    BotType = BotType;
     private ORDER_PROCESSING_TIME_IN_MS = 10000;
+    private FAST_BOT_PROCESSING_TIME_IN_MS = 5000;
 
     title = 'se-take-home-assignment';
     pendingVIPOrders: IOrder[] = [];
@@ -39,10 +41,21 @@ export class AppComponent {
         this.processOrder(); // Immediately process order if bots available
     }
 
-    onAddBotClick(): void {
-        this.bots.push({
+    onAddBotClick(botType: BotType): void {
+        var bot = {
             order: null,
-        });
+            type: botType,
+            processingTime: 0,
+        };
+        switch (botType) {
+            case BotType.Normal:
+                bot.processingTime = this.ORDER_PROCESSING_TIME_IN_MS;
+                break;
+            case BotType.Fast:
+                bot.processingTime = this.FAST_BOT_PROCESSING_TIME_IN_MS;
+                break;
+        }
+        this.bots.push(bot);
         this.processOrder(); // Immediately process any pending order with new bot
     }
 
@@ -66,11 +79,6 @@ export class AppComponent {
     }
 
     private processOrder(): void {
-        // Return if no bot available, otherwise process pending order
-        const botInIDLE = this.bots.find((bot) => !bot.order);
-
-        if (!botInIDLE) return;
-
         // Process vip order first, followed by normal order, return if no pending orders
         const pendingOrder =
             this.pendingVIPOrders.shift() ||
@@ -78,21 +86,38 @@ export class AppComponent {
             null;
 
         if (!pendingOrder) return;
+
+        let botInIDLE = null;
+        const fastBotInIDLE = this.bots.find(
+            (bot) => !bot.order && bot.type === BotType.Fast
+        );
+        const normalBotInIDLE = this.bots.find(
+            (bot) => !bot.order && bot.type === BotType.Normal
+        );
+
+        if (pendingOrder.customerMembership === CustomerMembership.VIP) {
+            botInIDLE = fastBotInIDLE || normalBotInIDLE;
+        } else {
+            botInIDLE = normalBotInIDLE || fastBotInIDLE;
+        }
+
+        // Return if no bot available, otherwise process pending order
+        if (!botInIDLE) return;
+
         pendingOrder.status = OrderStatus.Processing;
         botInIDLE.order = pendingOrder;
 
         // 10s of processing time, complete order then process next pending order
+        pendingOrder.remainingProcessingTime = botInIDLE.processingTime;
         var remainingTime = pendingOrder.remainingProcessingTime;
         const COUNTDOWN_INTERVAL_IN_MS = 1000;
 
         const countdown = setInterval(() => {
             if (remainingTime === 0) {
-                debugger;
                 this.completeOrder(botInIDLE);
                 this.processOrder();
                 clearInterval(countdown);
             } else {
-                debugger;
                 remainingTime -= COUNTDOWN_INTERVAL_IN_MS;
                 pendingOrder.remainingProcessingTime = remainingTime;
             }

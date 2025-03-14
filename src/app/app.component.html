@@ -28,9 +28,16 @@
         <button
             type="button"
             class="button bg-blue-400 border-blue-500"
-            (click)="onAddBotClick()"
+            (click)="onAddBotClick(BotType.Normal)"
         >
             Add Bot
+        </button>
+        <button
+            type="button"
+            class="button bg-green-500 border-green-600"
+            (click)="onAddBotClick(BotType.Fast)"
+        >
+            Add Fast Bot
         </button>
         <button
             type="button"
@@ -93,17 +100,21 @@
         <div
             class="border border-gray-300 rounded-md p-4 flex flex-wrap gap-x-2 min-h-[4rem]"
         >
-            <span
-                class="rounded-sm p-2 bg-gray-300 text-white text-center min-w-[2rem] h-fit"
+            <div
+                class="rounded-sm p-2 text-white text-center min-w-[2rem] h-fit"
+                [ngClass]="
+                    bot.type === BotType.Normal ? 'bg-blue-300' : 'bg-green-300'
+                "
                 *ngFor="let bot of bots"
-                ><div>
+            >
+                <div>
                     {{ bot.order ? "#" + (bot.order.id | zeroPad) : "IDLE" }}
                 </div>
-                <div>
+                <div *ngIf="bot.order">
                     Remaining Time:
-                    {{ bot.order?.remainingProcessingTime + "ms" || "N/A" }}
-                </div></span
-            >
+                    {{ bot.order.remainingProcessingTime / 1000 + "s" }}
+                </div>
+            </div>
             <span *ngIf="!bots.length" class="text-sm text-gray-500"
                 >No Bots Available</span
             >
